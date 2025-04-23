@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  thehive-elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
+    container_name: thehive-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - cluster.name=thehive-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - thehive-esdata:/usr/share/elasticsearch/data
+    ports:
+      - 9202:9200  # Safe unused port
+    networks:
+      - wazuhnet
+
+  thehive:
+    image: strangebee/thehive:5
+    container_name: thehive
+    environment:
+      - "THEHIVE_elasticsearch.hosts=[http://thehive-elasticsearch:9200]"
+    depends_on:
+      - thehive-elasticsearch
+    ports:
+      - 9001:9000  # Safe UI port
+    networks:
+      - wazuhnet
+
+volumes:
+  thehive-esdata:
+
+networks:
+  wazuhnet:
+    external: true
+    name: single-node_wazuhnet
